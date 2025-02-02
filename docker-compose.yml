@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  resource-service:
+    image: postgres:17.2
+    restart: always
+    ports:
+      - "54322:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: resources
+    volumes:
+      - ./resource-service/init-scripts:/docker-entrypoint-initdb.d
+
+  song-service:
+    image: postgres:17.2
+    restart: always
+    ports:
+      - "54321:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: songs
+    volumes:
+      - ./song-service/init-scripts:/docker-entrypoint-initdb.d
