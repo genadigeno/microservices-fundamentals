@@ -11,7 +11,7 @@ GET:     /resources/{id} </br>
 DELETE:  /resources?id=1,2,3 </br>
 POST:    /resources </br>
 
-Database name: **resources** </br>
+Database name: **songs** </br>
 Schema name: **public** </br>
 DB username: (`${POSTGRES_USERNAME}`) default **postgres** </br>
 DB password: (`${POSTGRES_PASSWORD}`) default **postgres** </br>
