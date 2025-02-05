@@ -38,7 +38,7 @@ public class ResourceService {
     private String songServiceUrl;
 
     @Transactional(timeout = 10_000, rollbackFor = Exception.class)
-    public int create(MultipartFile file) throws IOException {
+    public Map<String, Integer> create(MultipartFile file) throws IOException {
         if (!SongResource.RESOURCE_CONTENT_TYPE.equals(file.getContentType())) {
             throw new FileFormatException("file is not mp3");
         }
@@ -67,7 +67,7 @@ public class ResourceService {
         //send to song service
         restTemplate.exchange(songServiceUrl, HttpMethod.POST, new HttpEntity<>(info), String.class);
 
-        return saved.getId();
+        return Map.of("id", saved.getId());
     }
 
     public ResourceData get(int id) {
@@ -81,7 +81,7 @@ public class ResourceService {
     }
 
     @Transactional(timeout = 10_000, rollbackFor = Exception.class)
-    public List<Integer> delete(String ids) {
+    public Map<String, List<Integer>> delete(String ids) {
         //get the ids that exist in resource DB
         List<Integer> idList = resourceRepository.getAllIdaByIds(toIntArray(ids));
         if (idList.isEmpty()) {
@@ -113,7 +113,7 @@ public class ResourceService {
          *  is for a simplicity.
          * */
 
-        return idList;
+        return Map.of("ids", idList);
     }
 
     private static List<Integer> toIntArray(String ids) {

@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/resources")
@@ -20,12 +21,9 @@ public class ResourceController {
     private final ResourceService resourceService;
 
     @PostMapping
-    public CreationInfo createSong(@RequestParam("file") MultipartFile file) throws IOException {
+    public Map<String, Integer> createSong(@RequestParam("file") MultipartFile file) throws IOException {
         logger.info("Creating a new song");
-        int id = resourceService.create(file);//validate and save to DB
-        return CreationInfo.builder()
-                .id(id)
-                .build();
+        return resourceService.create(file);//validate and save to DB
     }
 
     @GetMapping("/{id}")
@@ -35,7 +33,7 @@ public class ResourceController {
     }
 
     @DeleteMapping
-    public List<Integer> deleteResource(@RequestParam String id){
+    public Map<String, List<Integer>> deleteResource(@RequestParam String id){
         logger.info("Deleting resource with id {}", id);
         return resourceService.delete(id);
     }

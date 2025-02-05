@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/songs")
@@ -16,7 +17,7 @@ public class SongController {
     private final SongService songService;
 
     @PostMapping
-    public String createSong(@Valid @RequestBody SongDto data) {
+    public Map<String, Integer> createSong(@Valid @RequestBody SongDto data) {
         return songService.create(data);
     }
 
@@ -26,7 +27,7 @@ public class SongController {
     }
 
     @DeleteMapping
-    public List<Integer> deleteSong(@RequestParam("id") String ids) {
+    public Map<String, List<Integer>> deleteSong(@RequestParam("id") String ids) {
         return songService.delete(ids);
     }
 }

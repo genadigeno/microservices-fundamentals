@@ -1,14 +1,11 @@
 package epam.task.song.reqres;
 
-import lombok.Builder;
 import lombok.Data;
-
-import java.util.Map;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
 public class ErrorMessage {
     private String errorMessage;
     private String errorCode;
-    private Map<String, String> details;
 }

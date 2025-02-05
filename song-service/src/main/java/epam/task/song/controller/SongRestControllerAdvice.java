@@ -1,9 +1,8 @@
 package epam.task.song.controller;
 
 import epam.task.song.reqres.ErrorMessage;
+import epam.task.song.reqres.ErrorMessageDetails;
 import jakarta.persistence.EntityNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -42,7 +41,7 @@ public class SongRestControllerAdvice extends ResponseEntityExceptionHandler {
         BindingResult bindingResult = ex.getBindingResult();
         List<ObjectError> errors = bindingResult.getAllErrors();
 
-        ErrorMessage.ErrorMessageBuilder builder = ErrorMessage.builder();
+        ErrorMessageDetails.ErrorMessageDetailsBuilder<?, ?> builder = ErrorMessageDetails.builder();
         builder.errorMessage("invalid request body parameters");
         builder.errorCode(String.valueOf(HttpStatus.BAD_REQUEST.value()));
 

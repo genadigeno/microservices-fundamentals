@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,20 +23,19 @@ public class SongService {
     private final SongRepository songRepository;
 
     @Transactional(timeout = 10_000, rollbackFor = Exception.class)
-    public List<Integer> delete(String ids) {
+    public Map<String, List<Integer>> delete(String ids) {
         List<Integer> idList = songRepository.getAllIdsByIds(toIntArray(ids));
-        LOGGER.info("Deleting resource(s)");
+        LOGGER.info("Deleting song(s)");
 
-        //cascade deletion
         for (Integer id : idList) {
-            ///1.   delete from db
             songRepository.deleteById(id);
         }
 
-        return idList;
+        return Map.of("ids", idList);
     }
 
-    public String create(SongDto data) {
+    public Map<String, Integer> create(SongDto data) {
+        LOGGER.info("Creating song(s)");
         Song song = new Song();
         song.setId(Integer.parseInt(data.getId()));
         song.setName(data.getName());
@@ -44,7 +44,7 @@ public class SongService {
         song.setDuration(data.getDuration());
         song.setYear(data.getYear());
         Song saved = songRepository.save(song);
-        return String.valueOf(saved.getId());
+        return Map.of("id", saved.getId());
     }
 
     private static List<Integer> toIntArray(String ids) {
@@ -52,6 +52,7 @@ public class SongService {
         //validate numeric value
         boolean allNumeric = Arrays.stream(nums).allMatch(id -> id.matches("^\\d+$"));
         if (!allNumeric) {
+            LOGGER.warn("Invalid ids format");
             throw new IllegalArgumentException("non-numeric id not allowed");
         }
 
@@ -61,6 +62,6 @@ public class SongService {
     }
 
     public Song get(int id) {
-        return songRepository.findById(id).orElseThrow(EntityNotFoundException::new);
+        return songRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Song not found"));
     }
 }
