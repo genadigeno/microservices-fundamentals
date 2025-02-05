@@ -5,6 +5,7 @@ import epam.task.song.reqres.SongDto;
 import epam.task.song.service.SongService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.validator.constraints.Length;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,7 +28,9 @@ public class SongController {
     }
 
     @DeleteMapping
-    public Map<String, List<Integer>> deleteSong(@RequestParam("id") String ids) {
+    public Map<String, List<Integer>> deleteSong(@Valid
+                                                 @Length(min = 1, max = 100)
+                                                 @RequestParam("id") String ids) {
         return songService.delete(ids);
     }
 }

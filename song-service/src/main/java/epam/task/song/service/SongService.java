@@ -1,5 +1,6 @@
 package epam.task.song.service;
 
+import epam.task.song.exception.EntityAlreadyExistsException;
 import epam.task.song.model.Song;
 import epam.task.song.repository.SongRepository;
 import epam.task.song.reqres.SongDto;
@@ -36,6 +37,12 @@ public class SongService {
 
     public Map<String, Integer> create(SongDto data) {
         LOGGER.info("Creating song(s)");
+
+        if (songRepository.existsById(Integer.parseInt(data.getId()))){
+            LOGGER.info("Song already exists");
+            throw new EntityAlreadyExistsException();
+        }
+
         Song song = new Song();
         song.setId(Integer.parseInt(data.getId()));
         song.setName(data.getName());

@@ -13,4 +13,6 @@ public interface SongRepository extends JpaRepository<Song, Integer> {
     //get only the ids that exist in db to return entity's id who was deleted
     @Query("select s.id from Song as s where s.id in :ids")
     List<Integer> getAllIdsByIds(@Param("ids") List<Integer> ids);
+
+    boolean existsById(int id);
 }

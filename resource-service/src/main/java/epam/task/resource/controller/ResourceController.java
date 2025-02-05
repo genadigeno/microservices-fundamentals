@@ -1,12 +1,14 @@
 package epam.task.resource.controller;
 
-import epam.task.resource.reqres.*;
 import epam.task.resource.service.ResourceService;
+import epam.task.resource.util.PositiveNumber;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hibernate.validator.constraints.Length;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
@@ -21,19 +23,24 @@ public class ResourceController {
     private final ResourceService resourceService;
 
     @PostMapping
-    public Map<String, Integer> createSong(@RequestParam("file") MultipartFile file) throws IOException {
-        logger.info("Creating a new song");
-        return resourceService.create(file);//validate and save to DB
+    public Map<String, Integer> createResource(HttpServletRequest request) throws IOException {
+        logger.info("Creating a new Resource");
+        return resourceService.create(request);//validate and save to DB
     }
 
-    @GetMapping("/{id}")
-    public ResourceData getSong(@PathVariable int id){
-        logger.info("Getting song with id {}", id);
+    @GetMapping(value = "/{id}", produces = "audio/mpeg")
+    public byte[] getResource(@Valid
+                          @PositiveNumber
+                          @PathVariable int id){
+
+        logger.info("Getting Resource with id {}", id);
         return resourceService.get(id);
     }
 
     @DeleteMapping
-    public Map<String, List<Integer>> deleteResource(@RequestParam String id){
+    public Map<String, List<Integer>> deleteResource(@Valid
+                                                     @Length(min = 1, max = 100)
+                                                     @RequestParam String id){
         logger.info("Deleting resource with id {}", id);
         return resourceService.delete(id);
     }
