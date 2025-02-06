@@ -1,6 +1,5 @@
 package epam.task.resource.reqres;
 
-import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 

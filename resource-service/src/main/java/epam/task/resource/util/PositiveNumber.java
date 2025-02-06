@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Target({ElementType.PARAMETER, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PositiveNumber {
-    String message() default "ID must be a number";
+    String message() default "value must be a positive number";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

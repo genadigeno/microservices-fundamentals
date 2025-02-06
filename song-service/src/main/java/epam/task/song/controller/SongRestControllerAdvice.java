@@ -1,8 +1,9 @@
 package epam.task.song.controller;
 
 import epam.task.song.exception.EntityAlreadyExistsException;
+import epam.task.song.exception.IllegalParameterException;
 import epam.task.song.reqres.ErrorMessage;
-import epam.task.song.reqres.ErrorMessageDetails;
+import epam.task.song.reqres.DetailedErrorMessage;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -20,6 +22,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @RestControllerAdvice
@@ -27,17 +30,23 @@ public class SongRestControllerAdvice extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Object> handleEntityNotFoundException(EntityNotFoundException ex) {
-        return createErrorMessage(ex.getMessage(), HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                createErrorMessage(ex.getMessage(), HttpStatus.NOT_FOUND.value())
+        );
     }
 
     @ExceptionHandler(EntityAlreadyExistsException.class)
     public ResponseEntity<Object> handleEntityAlreadyExistsException(EntityAlreadyExistsException ex) {
-        return createErrorMessage(ex.getMessage(), HttpStatus.CONFLICT);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                createErrorMessage(ex.getMessage(), HttpStatus.CONFLICT.value())
+        );
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException ex) {
-        return createErrorMessage(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    @ExceptionHandler(IllegalParameterException.class)
+    public ResponseEntity<Object> handleIllegalArgumentException(IllegalParameterException ex) {
+        return ResponseEntity.badRequest().body(
+                createErrorMessage(ex.getMessage(), HttpStatus.BAD_REQUEST.value(), ex.getDetails())
+        );
     }
 
     @Override
@@ -48,20 +57,17 @@ public class SongRestControllerAdvice extends ResponseEntityExceptionHandler {
         BindingResult bindingResult = ex.getBindingResult();
         List<ObjectError> errors = bindingResult.getAllErrors();
 
-        ErrorMessageDetails.ErrorMessageDetailsBuilder<?, ?> builder = ErrorMessageDetails.builder();
-        builder.errorMessage("invalid request body parameters");
-        builder.errorCode(String.valueOf(HttpStatus.BAD_REQUEST.value()));
-
-        final HashMap<String, String> errorMap = new HashMap<>();
-
+        final HashMap<String, String> details = new HashMap<>();
         errors.forEach(error -> {
             if (error instanceof FieldError fieldError){
                 //Object rejectedValue = fieldError.getRejectedValue();
-                errorMap.put(fieldError.getField(), error.getDefaultMessage());
+                details.put(fieldError.getField(), error.getDefaultMessage());
             }
         });
-        builder.details(errorMap);
-        return ResponseEntity.badRequest().body(builder.build());
+
+        return ResponseEntity.badRequest().body(createErrorMessage(
+                "invalid request body parameters", HttpStatus.BAD_REQUEST.value(), details
+        ));
     }
 
     @Override
@@ -69,15 +75,32 @@ public class SongRestControllerAdvice extends ResponseEntityExceptionHandler {
                                                                             HttpHeaders headers,
                                                                             HttpStatusCode status,
                                                                             WebRequest request) {
-        return createErrorMessage(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        final Map<String, String> details = new HashMap<>();
+        List<ParameterValidationResult> validationResults = ex.getParameterValidationResults();
+        validationResults.stream().findFirst().ifPresent(result -> {
+            result.getResolvableErrors().stream().findFirst().ifPresent(error -> {
+                String parameterName = result.getMethodParameter().getParameterName();
+                details.put(parameterName, error.getDefaultMessage());
+            });
+        });
+
+        return ResponseEntity.badRequest().body(
+                createErrorMessage(ex.getReason(), HttpStatus.BAD_REQUEST.value(), details)
+        );
     }
 
-    private static ResponseEntity<Object> createErrorMessage(String ex, HttpStatus status) {
-        ErrorMessage errorMessage = ErrorMessage.builder()
-                .errorCode(String.valueOf(status.value()))
-                .errorMessage(ex)
+    private static ErrorMessage createErrorMessage(String errorMessage, int errorCode) {
+        return ErrorMessage.builder()
+                .errorCode(String.valueOf(errorCode))
+                .errorMessage(errorMessage)
                 .build();
+    }
 
-        return new ResponseEntity<>(errorMessage, status);
+    private static ErrorMessage createErrorMessage(String errorMessage, int errorCode, Map<?, ?> details) {
+        return DetailedErrorMessage.builder()
+                .errorCode(String.valueOf(errorCode))
+                .errorMessage(errorMessage)
+                .details(details)
+                .build();
     }
 }

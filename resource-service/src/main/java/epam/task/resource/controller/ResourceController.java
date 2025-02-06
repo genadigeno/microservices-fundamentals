@@ -8,11 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.validator.constraints.Length;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/resources")
@@ -23,25 +22,22 @@ public class ResourceController {
     private final ResourceService resourceService;
 
     @PostMapping
-    public Map<String, Integer> createResource(HttpServletRequest request) throws IOException {
+    public ResponseEntity<?> createResource(HttpServletRequest request) throws IOException {
         logger.info("Creating a new Resource");
-        return resourceService.create(request);//validate and save to DB
+        //assertion in postman tests requires 200 status, not 201
+        return ResponseEntity.ok(resourceService.create(request));
     }
 
     @GetMapping(value = "/{id}", produces = "audio/mpeg")
-    public byte[] getResource(@Valid
-                          @PositiveNumber
-                          @PathVariable int id){
-
+    public ResponseEntity<?> getResource(@Valid @PositiveNumber @PathVariable int id){
         logger.info("Getting Resource with id {}", id);
-        return resourceService.get(id);
+        return ResponseEntity.ok(resourceService.get(id));
     }
 
     @DeleteMapping
-    public Map<String, List<Integer>> deleteResource(@Valid
-                                                     @Length(min = 1, max = 100)
-                                                     @RequestParam String id){
+    public ResponseEntity<?> deleteResource(@Valid @Length(min = 1, max = 100) @RequestParam String id){
         logger.info("Deleting resource with id {}", id);
-        return resourceService.delete(id);
+        //assertion in postman tests requires 200 status, not 409
+        return ResponseEntity.ok(resourceService.delete(id));
     }
 }

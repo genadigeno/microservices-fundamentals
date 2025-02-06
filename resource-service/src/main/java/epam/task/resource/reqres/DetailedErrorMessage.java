@@ -7,6 +7,6 @@ import java.util.Map;
 
 @Data
 @SuperBuilder
-public class ErrorMessageDetails extends ErrorMessage {
-    private Map<String, String> details;
+public class DetailedErrorMessage extends ErrorMessage {
+    private Map<?, ?> details;
 }

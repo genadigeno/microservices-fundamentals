@@ -1,6 +1,7 @@
 package epam.task.resource.service;
 
 import epam.task.resource.exception.FileFormatException;
+import epam.task.resource.exception.IllegalParameterException;
 import epam.task.resource.model.SongResource;
 import epam.task.resource.repository.ResourceRepository;
 import epam.task.resource.reqres.MetadataInfo;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -49,7 +51,7 @@ public class ResourceService {
         MultipartFile multipartFile = new CustomMultipartFile("song", fileBytes);
 
         if (!SongResource.RESOURCE_CONTENT_TYPE.equals(tika.detect(fileBytes))) {
-            throw new FileFormatException("file is not mp3");
+            throw new FileFormatException("uploaded file's format is not mp3");
         }
         logger.info("Creating resource");
 
@@ -74,7 +76,12 @@ public class ResourceService {
                 .build();
 
         //send to song service
-        restTemplate.exchange(songServiceUrl, HttpMethod.POST, new HttpEntity<>(info), String.class);
+        try {
+            restTemplate.exchange(songServiceUrl, HttpMethod.POST, new HttpEntity<>(info), String.class);
+        } catch (RestClientException e) {
+            logger.error(e.getMessage());
+            throw new RestClientException(e.getMessage());
+        }
 
         return Map.of("id", saved.getId());
     }
@@ -82,7 +89,7 @@ public class ResourceService {
     public byte[] get(int id) {
         logger.info("Retrieving resource");
         SongResource resource = resourceRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("resource not found"));
+                .orElseThrow(() -> new EntityNotFoundException("resource with ID="+id+" not found"));
 
         return resource.getData();
     }
@@ -128,7 +135,7 @@ public class ResourceService {
         //validate numeric value
         boolean allNumeric = Arrays.stream(nums).allMatch(id -> id.matches("^\\d+$"));
         if (!allNumeric) {
-            throw new IllegalArgumentException("non-numeric id not allowed");
+            throw new IllegalParameterException("Invalid parameter", Map.of("id", "value must be numeric"));
         }
 
         return Arrays.stream(nums)

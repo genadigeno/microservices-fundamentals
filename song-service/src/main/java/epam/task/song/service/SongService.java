@@ -1,6 +1,7 @@
 package epam.task.song.service;
 
 import epam.task.song.exception.EntityAlreadyExistsException;
+import epam.task.song.exception.IllegalParameterException;
 import epam.task.song.model.Song;
 import epam.task.song.repository.SongRepository;
 import epam.task.song.reqres.SongDto;
@@ -39,8 +40,8 @@ public class SongService {
         LOGGER.info("Creating song(s)");
 
         if (songRepository.existsById(Integer.parseInt(data.getId()))){
-            LOGGER.info("Song already exists");
-            throw new EntityAlreadyExistsException();
+            LOGGER.info("Song[id={}] already exists", data.getId());
+            throw new EntityAlreadyExistsException("song with id " + data.getId() + " already exists");
         }
 
         Song song = new Song();
@@ -60,7 +61,7 @@ public class SongService {
         boolean allNumeric = Arrays.stream(nums).allMatch(id -> id.matches("^\\d+$"));
         if (!allNumeric) {
             LOGGER.warn("Invalid ids format");
-            throw new IllegalArgumentException("non-numeric id not allowed");
+            throw new IllegalParameterException("Invalid parameter", Map.of("id", "value must be numeric"));
         }
 
         return Arrays.stream(nums)
@@ -69,6 +70,7 @@ public class SongService {
     }
 
     public Song get(int id) {
-        return songRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Song not found"));
+        return songRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Song with ID="+id+" not found"));
     }
 }
