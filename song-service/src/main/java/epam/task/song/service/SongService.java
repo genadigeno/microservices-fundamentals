@@ -69,8 +69,16 @@ public class SongService {
                 .collect(Collectors.toList());
     }
 
-    public Song get(int id) {
+    public SongDto get(int id) {
         return songRepository.findById(id)
+                .map(song -> SongDto.builder()
+                        .album(song.getAlbum())
+                        .artist(song.getArtist())
+                        .duration(song.getDuration())
+                        .year(song.getYear())
+                        .name(song.getName())
+                        .id(String.valueOf(song.getId()))
+                        .build())
                 .orElseThrow(() -> new EntityNotFoundException("Song with ID="+id+" not found"));
     }
 }

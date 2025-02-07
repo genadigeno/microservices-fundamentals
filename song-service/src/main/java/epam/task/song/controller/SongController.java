@@ -24,7 +24,7 @@ public class SongController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Song> getSong(@PathVariable int id) {
+    public ResponseEntity<SongDto> getSong(@PathVariable int id) {
         return ResponseEntity.ok(songService.get(id));
     }
 
