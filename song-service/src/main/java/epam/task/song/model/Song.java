@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "songs_metadata", schema = "public")
+@Table(name = "songs", schema = "public")
 @Getter
 @Setter
 public class Song {

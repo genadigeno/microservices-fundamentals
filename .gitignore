@@ -23,3 +23,6 @@
 hs_err_pid*
 replay_pid*
 .idea/
+
+init-scripts/resource-db/pg_data
+init-scripts/song-db/pg_data

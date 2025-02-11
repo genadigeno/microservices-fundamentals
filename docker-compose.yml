@@ -1,26 +1,59 @@
 version: '3.9'
 
 services:
-  resource-service:
-    image: postgres:17.2
+  resource-db:
+    image: postgres:17-alpine3.21
+    container_name: resource-db
     restart: always
     ports:
       - "54321:5432"
     environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_DB: resources
+      POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
+      POSTGRES_USER: ${RESOURCE_POSTGRES_USER}
+      POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
     volumes:
-      - ./resource-service/init-scripts:/docker-entrypoint-initdb.d
-
-  song-service:
-    image: postgres:17.2
+      - ./init-scripts/resource-db/init.sql:/docker-entrypoint-initdb.d/init.sql
+  song-db:
+    image: postgres:17-alpine3.21
+    container_name: song-db
     restart: always
     ports:
       - "54322:5432"
     environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_DB: songs
+      POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
+      POSTGRES_USER: ${SONG_POSTGRES_USER}
+      POSTGRES_DB: ${SONG_POSTGRES_DB}
     volumes:
-      - ./song-service/init-scripts:/docker-entrypoint-initdb.d
+      - ./init-scripts/song-db/init.sql:/docker-entrypoint-initdb.d/init.sql
+  resource_service:
+    build: ./resource-service/.
+    container_name: resource_service
+    depends_on:
+      - resource-db
+      - song-service
+    ports:
+      - "8081:8081"
+    environment:
+      SERVER_PORT: ${RESOURCE_SERVER_PORT}
+      POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
+      POSTGRES_USERNAME: ${RESOURCE_POSTGRES_USER}
+      SPRING_DATASOURCE_URL: ${RESOURCE_DB_URL}
+      POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
+      JPA_GENERATED_DDL: ${RESOURCE_JPA_GENERATED_DDL}
+      JPA_HIBERNATE_DDL_AUTO: ${RESOURCE_JPA_HIBERNATE_DDL_AUTO}
+      SONG_SERVICE_URL: http://song-service:8082/songs
+  song-service:
+    build: ./song-service/.
+    container_name: song-service
+    depends_on:
+      - song-db
+    ports:
+      - "8082:8082"
+    environment:
+      SERVER_PORT: ${SONG_SERVER_PORT}
+      POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
+      POSTGRES_USERNAME: ${SONG_POSTGRES_USER}
+      SPRING_DATASOURCE_URL: ${SONG_DB_URL}
+      POSTGRES_DB: ${SONG_POSTGRES_DB}
+      JPA_GENERATED_DDL: ${SONG_JPA_GENERATED_DDL}
+      JPA_HIBERNATE_DDL_AUTO: ${SONG_JPA_HIBERNATE_DDL_AUTO}

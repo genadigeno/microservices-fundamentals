@@ -53,13 +53,14 @@ public class ResourceService {
         if (!SongResource.RESOURCE_CONTENT_TYPE.equals(tika.detect(fileBytes))) {
             throw new FileFormatException("uploaded file's format is not mp3");
         }
-        logger.info("Creating resource");
 
         SongResource resource = new SongResource();
         resource.setData(fileBytes);
+        logger.info("Creating resource...");
         SongResource saved = resourceRepository.save(resource);
 
         //Apache Tika - extract metadata from a file
+        logger.info("Saved resource and parsing a metadata...");
         Map<String, String> metadata = resourceParserService.extractMetadata(multipartFile);
 
         MetadataInfo info = MetadataInfo.builder()
@@ -77,9 +78,10 @@ public class ResourceService {
 
         //send to song service
         try {
+            logger.info("Saving resource to song service...");
             restTemplate.exchange(songServiceUrl, HttpMethod.POST, new HttpEntity<>(info), String.class);
         } catch (RestClientException e) {
-            logger.error(e.getMessage());
+            logger.error(e.getMessage(), e);
             throw new RestClientException(e.getMessage());
         }
 
@@ -87,7 +89,7 @@ public class ResourceService {
     }
 
     public byte[] get(int id) {
-        logger.info("Retrieving resource");
+        logger.info("Retrieving resource...");
         SongResource resource = resourceRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("resource with ID="+id+" not found"));
 
@@ -100,7 +102,7 @@ public class ResourceService {
         List<Integer> idList = resourceRepository.getAllIdaByIds(toIntArray(ids));
 
         if (!idList.isEmpty()) {
-            logger.info("Deleting resource(s)");
+            logger.info("Deleting resource(s)...");
 
             //cascade deletion
             for (Integer id : idList) {
