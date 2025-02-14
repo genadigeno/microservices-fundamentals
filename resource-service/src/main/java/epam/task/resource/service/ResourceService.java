@@ -1,5 +1,7 @@
 package epam.task.resource.service;
 
+import epam.task.resource.clients.SongClient;
+import epam.task.resource.exception.ExternalServiceException;
 import epam.task.resource.exception.FileFormatException;
 import epam.task.resource.exception.IllegalParameterException;
 import epam.task.resource.model.SongResource;
@@ -7,27 +9,26 @@ import epam.task.resource.repository.ResourceRepository;
 import epam.task.resource.reqres.MetadataInfo;
 import epam.task.resource.util.CustomMultipartFile;
 import epam.task.resource.util.FormatUtils;
+import feign.FeignException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,11 +39,8 @@ public class ResourceService {
     private final Tika tika = new Tika();
 
     private final ResourceRepository resourceRepository;
-    private final RestTemplate restTemplate;
     private final ResourceParserService resourceParserService;
-
-    @Value("${song.service.url}")
-    private String songServiceUrl;
+    private final SongClient songClient;
 
     @Transactional(timeout = 10_000, rollbackFor = Exception.class)
     public Map<String, Integer> create(HttpServletRequest request) throws IOException {
@@ -63,7 +61,7 @@ public class ResourceService {
         logger.info("Saved resource and parsing a metadata...");
         Map<String, String> metadata = resourceParserService.extractMetadata(multipartFile);
 
-        MetadataInfo info = MetadataInfo.builder()
+        MetadataInfo requestBody = MetadataInfo.builder()
                 .id(String.valueOf(saved.getId()))
                 .name(metadata.get("name"))
                 .artist(metadata.get("artist"))
@@ -79,10 +77,14 @@ public class ResourceService {
         //send to song service
         try {
             logger.info("Saving resource to song service...");
-            restTemplate.exchange(songServiceUrl, HttpMethod.POST, new HttpEntity<>(info), String.class);
-        } catch (RestClientException e) {
+            ResponseEntity<?> responseEntity = songClient.saveSong(requestBody);
+            if (!responseEntity.getStatusCode().is2xxSuccessful()) {
+                logger.error("Failed to save resource to song service");
+                throw new RuntimeException(responseEntity.getStatusCode().value() + " " + responseEntity.getBody());
+            }
+        } catch (FeignException e) {
             logger.error(e.getMessage(), e);
-            throw new RestClientException(e.getMessage());
+            throw new ExternalServiceException(e.status(), extractResponseBody(e.responseBody()));
         }
 
         return Map.of("id", saved.getId());
@@ -112,11 +114,13 @@ public class ResourceService {
 
             ///2.   then call song REST API to remove a song from there.
             ///     if it fails we will throw an exception that rolls back our changes
-            ids = idList.stream().map(String::valueOf).collect(Collectors.joining(","));
-            ResponseEntity<String> responseEntity =
-                    restTemplate.exchange(songServiceUrl+"?id="+ids, HttpMethod.DELETE,null, String.class);
 
+            //get song url from service registry
+            ids = idList.stream().map(String::valueOf).collect(Collectors.joining(","));
+
+            ResponseEntity<?> responseEntity = songClient.deleteSong(ids);
             if (!responseEntity.getStatusCode().is2xxSuccessful()) {
+                logger.error("Failed to remove resource from song service");
                 throw new RuntimeException(responseEntity.getStatusCode().value() + " " + responseEntity.getBody());
             }
 
@@ -143,5 +147,13 @@ public class ResourceService {
         return Arrays.stream(nums)
                 .map(Integer::parseInt)
                 .collect(Collectors.toList());
+    }
+
+    private String extractResponseBody(Optional<ByteBuffer> optional) {
+        if (optional.isEmpty()) {
+            return null;
+        }
+        ByteBuffer byteBuffer = optional.get();
+        return new String(byteBuffer.array(), StandardCharsets.UTF_8);
     }
 }

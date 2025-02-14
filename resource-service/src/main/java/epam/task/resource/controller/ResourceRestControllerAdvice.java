@@ -1,5 +1,6 @@
 package epam.task.resource.controller;
 
+import epam.task.resource.exception.ExternalServiceException;
 import epam.task.resource.exception.FileFormatException;
 import epam.task.resource.exception.ValidationException;
 import epam.task.resource.reqres.DetailedErrorMessage;
@@ -65,6 +66,11 @@ public class ResourceRestControllerAdvice extends ResponseEntityExceptionHandler
     public ResponseEntity<Object> handleRestClientException(RestClientException e) {
         return new ResponseEntity<>(createErrorMessage("Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR.value()),
                 HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(ExternalServiceException.class)
+    public ResponseEntity<Object> handleExternalServiceException(ExternalServiceException e) {
+        return new ResponseEntity<>(createErrorMessage(e.getMessage(), e.getStatus()), HttpStatus.valueOf(e.getStatus()));
     }
 
     @Override

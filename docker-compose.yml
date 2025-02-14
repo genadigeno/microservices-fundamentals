@@ -25,11 +25,12 @@ services:
       POSTGRES_DB: ${SONG_POSTGRES_DB}
     volumes:
       - ./init-scripts/song-db/init.sql:/docker-entrypoint-initdb.d/init.sql
-  resource_service:
+  resource-service:
     build: ./resource-service/.
-    container_name: resource_service
+    container_name: resource-service
     depends_on:
       - resource-db
+#      - service-registry
       - song-service
     ports:
       - "8081:8081"
@@ -41,14 +42,15 @@ services:
       POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
       JPA_GENERATED_DDL: ${RESOURCE_JPA_GENERATED_DDL}
       JPA_HIBERNATE_DDL_AUTO: ${RESOURCE_JPA_HIBERNATE_DDL_AUTO}
-      SONG_SERVICE_URL: http://song-service:8082/songs
+      SONG_SERVICE_NAME: ${SONG_SERVICE_NAME}
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
   song-service:
     build: ./song-service/.
-    container_name: song-service
+    deploy:
+      replicas: 2
     depends_on:
       - song-db
-    ports:
-      - "8082:8082"
+#      - service-registry
     environment:
       SERVER_PORT: ${SONG_SERVER_PORT}
       POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
@@ -57,3 +59,10 @@ services:
       POSTGRES_DB: ${SONG_POSTGRES_DB}
       JPA_GENERATED_DDL: ${SONG_JPA_GENERATED_DDL}
       JPA_HIBERNATE_DDL_AUTO: ${SONG_JPA_HIBERNATE_DDL_AUTO}
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+#  service-registry:
+#    build: ./service-registry/.
+#    container_name: service-registry
+#    restart: always
+#    ports:
+#      - "8761:8761"
