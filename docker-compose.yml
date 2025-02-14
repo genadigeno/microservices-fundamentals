@@ -30,10 +30,10 @@ services:
     container_name: resource-service
     depends_on:
       - resource-db
-#      - service-registry
+      - service-registry
       - song-service
     ports:
-      - "8081:8081"
+      - "8083:8083"
     environment:
       SERVER_PORT: ${RESOURCE_SERVER_PORT}
       POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
@@ -50,7 +50,7 @@ services:
       replicas: 2
     depends_on:
       - song-db
-#      - service-registry
+      - service-registry
     environment:
       SERVER_PORT: ${SONG_SERVER_PORT}
       POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
@@ -60,9 +60,22 @@ services:
       JPA_GENERATED_DDL: ${SONG_JPA_GENERATED_DDL}
       JPA_HIBERNATE_DDL_AUTO: ${SONG_JPA_HIBERNATE_DDL_AUTO}
       EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
-#  service-registry:
-#    build: ./service-registry/.
-#    container_name: service-registry
-#    restart: always
-#    ports:
-#      - "8761:8761"
+  service-registry:
+    build: ./service-registry/.
+    container_name: service-registry
+    restart: always
+    ports:
+      - "8761:8761"
+  api-gateway:
+    build: ./api-gateway/.
+    depends_on:
+      - service-registry
+      - song-db
+      - resource-service
+    container_name: api-gateway
+    restart: always
+    ports:
+      - "8888:8888"
+    environment:
+      SERVER_PORT: ${GATEWAY_SERVER_PORT}
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
