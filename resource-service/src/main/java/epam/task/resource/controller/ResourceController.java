@@ -1,5 +1,6 @@
 package epam.task.resource.controller;
 
+import epam.task.resource.model.SongResource;
 import epam.task.resource.service.ResourceService;
 import epam.task.resource.util.PositiveNumber;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,12 +27,11 @@ public class ResourceController {
     @PostMapping
     public ResponseEntity<Map<String, Integer>> createResource(HttpServletRequest request) throws IOException {
         logger.info("Creating a new Resource");
-        //assertion in postman tests requires 200 status, not 201
         return ResponseEntity.ok(resourceService.create(request));
     }
 
-    @GetMapping(value = "/{id}", produces = "audio/mpeg")
-    public ResponseEntity<byte[]> getResource(@Valid @PositiveNumber @PathVariable int id){
+    @GetMapping(value = "/{id}", produces = SongResource.RESOURCE_CONTENT_TYPE)
+    public ResponseEntity<byte[]> getResource(@Valid @PositiveNumber @PathVariable int id) {
         logger.info("Getting Resource with id {}", id);
         return ResponseEntity.ok(resourceService.get(id));
     }
@@ -39,7 +39,6 @@ public class ResourceController {
     @DeleteMapping
     public ResponseEntity<Map<String, List<Integer>>> deleteResource(@Valid @Length(min = 1, max = 100) @RequestParam String id){
         logger.info("Deleting resource with id {}", id);
-        //assertion in postman tests requires 200 status, not 409
         return ResponseEntity.ok(resourceService.delete(id));
     }
 }

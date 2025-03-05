@@ -16,5 +16,5 @@ public class SongResource {
     @SequenceGenerator(name = "song_resources_sequence", sequenceName = "song_resources_sequence", allocationSize = 1)
     private int id;
 
-    private byte[] data;
+    private String location;
 }

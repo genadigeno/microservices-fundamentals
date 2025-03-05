@@ -5,5 +5,5 @@ create sequence if not exists public.song_resources_sequence
 
 create table if not exists public.song_resources (
    id integer primary key default nextval('public.song_resources_sequence'),
-   data bytea
+   location varchar(64)
 );
