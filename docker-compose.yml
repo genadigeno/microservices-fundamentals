@@ -25,3 +25,58 @@ services:
       POSTGRES_DB: ${SONG_POSTGRES_DB}
     volumes:
       - ./init-scripts/song-db/init.sql:/docker-entrypoint-initdb.d/init.sql
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+#  resource-processor:
+#    build: ./resource-processor/.
+#    container_name: resource-processor
+#    depends_on:
+#      - rabbitmq
+#    ports:
+#      - "8084:8084"
+#    env_file:
+#      - .env
+#    environment:
+#      SERVER_PORT: ${PROCESSOR_SERVER_PORT}
+#      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
+#  resource-service:
+#    build: ./resource-service/.
+#    container_name: resource-service
+#    depends_on:
+#      - resource-db
+#      - rabbitmq
+#    ports:
+#      - "8083:8083"
+#    environment:
+#      SERVER_PORT: ${RESOURCE_SERVER_PORT}
+#      POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
+#      POSTGRES_USERNAME: ${RESOURCE_POSTGRES_USER}
+#      SPRING_DATASOURCE_URL: ${RESOURCE_DB_URL}
+#      POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
+#      JPA_GENERATED_DDL: ${RESOURCE_JPA_GENERATED_DDL}
+#      JPA_HIBERNATE_DDL_AUTO: ${RESOURCE_JPA_HIBERNATE_DDL_AUTO}
+#      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
+#      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+#      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+#    env_file:
+#      - .env
+#  song-service:
+#    build: ./song-service/.
+#    container_name: song-service
+#    depends_on:
+#      - song-db
+#    environment:
+#      SERVER_PORT: ${SONG_SERVER_PORT}
+#      POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
+#      POSTGRES_USERNAME: ${SONG_POSTGRES_USER}
+#      SPRING_DATASOURCE_URL: ${SONG_DB_URL}
+#      POSTGRES_DB: ${SONG_POSTGRES_DB}
+#      JPA_GENERATED_DDL: ${SONG_JPA_GENERATED_DDL}
+#      JPA_HIBERNATE_DDL_AUTO: ${SONG_JPA_HIBERNATE_DDL_AUTO}

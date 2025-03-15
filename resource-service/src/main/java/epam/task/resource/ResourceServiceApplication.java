@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.retry.annotation.EnableRetry;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -12,6 +13,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 @Slf4j
 @SpringBootApplication
+@EnableRetry
 public class ResourceServiceApplication {
 
 	@Value("${aws.region}")
@@ -25,6 +27,7 @@ public class ResourceServiceApplication {
 
 	@Bean
 	public S3Client s3Client() {
+        log.info("accessKeyId: {}", accessKeyId);
 		return S3Client.builder()
 				.region(Region.of(region))
 				.credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey)))
