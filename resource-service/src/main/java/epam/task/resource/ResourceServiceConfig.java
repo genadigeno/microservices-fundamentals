@@ -9,6 +9,10 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 
 @Slf4j
 @Configuration
@@ -24,12 +28,23 @@ public class ResourceServiceConfig {
     @Value("${aws.accessKeyId}")
     private String accessKeyId;
 
+    @Value("${aws.endpoint-url}")
+    private String endpointUrl;
+
     @Bean
     public S3Client s3Client() {
-        log.info("accessKeyId: {}", accessKeyId);
+        log.info("accessKeyId: {}, endpoint: {}", accessKeyId, endpointUrl);
+        log.info("s3 client initializing...");
         return S3Client.builder()
                 .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey)))
+                .endpointOverride(URI.create(endpointUrl))
+                .serviceConfiguration(
+                        S3Configuration.builder()
+                                .pathStyleAccessEnabled(true)// Critical for LocalStack
+                                .build()
+                )
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(accessKeyId, secretAccessKey)))
                 .build();
     }
 }

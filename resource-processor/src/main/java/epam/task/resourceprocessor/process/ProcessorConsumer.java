@@ -1,6 +1,8 @@
 package epam.task.resourceprocessor.process;
 
 import epam.task.resourceprocessor.reqres.MetadataInfo;
+import epam.task.resourceprocessor.services.ResourceAPIService;
+import epam.task.resourceprocessor.services.SongAPIService;
 import epam.task.resourceprocessor.utils.FormatUtils;
 import epam.task.resourceprocessor.utils.ResourceParserService;
 import org.slf4j.Logger;
@@ -17,18 +19,17 @@ import java.util.Map;
 @Component
 public class ProcessorConsumer {
     private static final Logger log = LoggerFactory.getLogger(ProcessorConsumer.class);
-    private final RestTemplate restTemplate;
+
     private final ResourceParserService resourceParserService;
+    private final ResourceAPIService resourceAPIService;
+    private final SongAPIService songAPIService;
 
-    @Value("${song.service.url}")
-    private String songServiceUrl;
-
-    @Value("${resource.service.url}")
-    private String resourceServiceUrl;
-
-    public ProcessorConsumer(RestTemplate restTemplate, ResourceParserService resourceParserService) {
-        this.restTemplate = restTemplate;
+    public ProcessorConsumer(ResourceParserService resourceParserService,
+                             ResourceAPIService resourceAPIService,
+                             SongAPIService songAPIService) {
         this.resourceParserService = resourceParserService;
+        this.resourceAPIService = resourceAPIService;
+        this.songAPIService = songAPIService;
     }
 
     @RabbitListener(queues = "resources.queue")
@@ -39,18 +40,15 @@ public class ProcessorConsumer {
                 log.info("extracting resource id...");
                 int resourceId = extractResourceId(message.getMessageProperties().getHeader("resourceId"));
                 log.info("calling resource service with id {}", resourceId);
-                ResponseEntity<byte[]> response =
-                        restTemplate.getForEntity(resourceServiceUrl + "/resources/" + resourceId, byte[].class);
-                byte[] bytes = response.getBody();
+                ResponseEntity<byte[]> response = resourceAPIService.getResource(resourceId);
 
                 log.info("extracting metadata info...");
                 Map<String, String> metadata =
-                        resourceParserService.extractMetadata(new CustomMultipartFile("song", bytes));
+                        resourceParserService.extractMetadata(new CustomMultipartFile("song", response.getBody()));
 
                 log.info("calling song service...");
                 ResponseEntity<Map<String, Integer>> responseEntity =
-                        restTemplate.postForEntity(songServiceUrl + "/songs", buildRequestBody(resourceId, metadata),
-                                (Class<Map<String, Integer>>) (Class<?>) Map.class);
+                        songAPIService.createSong(buildRequestBody(resourceId, metadata));
 
                 if(responseEntity.getStatusCode().value() != 200) {
                     log.warn("response status is {}", responseEntity.getStatusCode().value());

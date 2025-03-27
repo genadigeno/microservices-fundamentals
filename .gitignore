@@ -26,3 +26,5 @@ replay_pid*
 
 init-scripts/resource-db/pg_data
 init-scripts/song-db/pg_data
+
+localstack/vol/*

@@ -1,0 +1,11 @@
+description: "Should process the message and call external services"
+label: "resource_created_event"
+
+input:
+    triggeredBy: "triggerMessage()" # Method to trigger the message in the test
+
+outputMessage:
+    sentTo: "resources.queue"
+    body: "created"
+    headers:
+        resourceId: "123"

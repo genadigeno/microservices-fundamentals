@@ -19,7 +19,9 @@ public class MessageService {
     private static final Logger logger = LoggerFactory.getLogger(MessageService.class);
     private final RabbitTemplate rabbitTemplate;
 
-    //test whether retry mechanism works well.
+    /**
+     * test whether retry mechanism works well.
+     * */
     private final ThreadLocal<Integer> retryCounter = ThreadLocal.withInitial(() -> 1);
 
     public MessageService(RabbitTemplate rabbitTemplate) {
@@ -29,7 +31,7 @@ public class MessageService {
     @Async
     @Retryable(maxAttempts = 2, retryFor = AmqpException.class)
     public void sendMessage(int resourceId) throws AmqpException {
-        System.out.println(Thread.currentThread().getName());
+        /*System.out.println(Thread.currentThread().getName());
         int retryCount = retryCounter.get();
         logger.info("= = = = = = = = = = RETRY NUMBER {} = = = = = = = = = =", retryCounter.get());
 
@@ -37,7 +39,7 @@ public class MessageService {
             logger.error("caused a manual fail");
             retryCounter.set(retryCount + 1);
             throw new AmqpException("manual fail");
-        }
+        }*/
 
         logger.info("sending a message...");
         MessageProperties messageProperties = new MessageProperties();
@@ -46,8 +48,8 @@ public class MessageService {
         rabbitTemplate.send("resources.exchange","*", message);
         logger.info("the message sent");
 
-        retryCounter.remove();
-        logger.info("* * * * * * * * * * * RETRY FINISHED * * * * * * * * * * *");
+        /*retryCounter.remove();
+        logger.info("* * * * * * * * * * * RETRY FINISHED * * * * * * * * * * *");*/
     }
 
     @Recover
