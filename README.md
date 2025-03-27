@@ -36,3 +36,17 @@ Schema name: **public** </br>
 DB username: `POSTGRES_USERNAME` default **postgres** </br>
 DB password: `POSTGRES_PASSWORD` default **postgres** </br>
 connection string: `POSTGRES_URL` default **jdbc:postgresql://localhost:54322/songs?currentSchema=public**
+
+## localstack
+check if the bucket has been created:
+```shell
+  docker exec -it localstack awslocal s3api list-buckets
+```
+create bucket manually into container if it was not created on startup: 
+```shell
+  docker exec -it localstack awslocal s3 mb s3://module-1
+```
+list out files:
+```shell
+  docker exec -it localstack awslocal s3api list-objects --bucket module-1
+```
