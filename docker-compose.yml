@@ -62,25 +62,25 @@ services:
       start_period: 30s
     networks:
       - my_network
-  service-registry:
-    build: ./service-registry/.
-    container_name: service-registry
-    restart: always
-    ports:
-      - "8761:8761"
-  api-gateway:
-    build: ./api-gateway/.
-    depends_on:
-      - service-registry
-      - song-db
-      - resource-service
-    container_name: api-gateway
-    restart: always
-    ports:
-      - "8888:8888"
-    environment:
-      SERVER_PORT: ${GATEWAY_SERVER_PORT}
-      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+#  service-registry:
+#    build: ./service-registry/.
+#    container_name: service-registry
+#    restart: always
+#    ports:
+#      - "8761:8761"
+#  api-gateway:
+#    build: ./api-gateway/.
+#    depends_on:
+#      - service-registry
+#      - song-db
+#      - resource-service
+#    container_name: api-gateway
+#    restart: always
+#    ports:
+#      - "8888:8888"
+#    environment:
+#      SERVER_PORT: ${GATEWAY_SERVER_PORT}
+#      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
 #  resource-processor:
 #    build: ./resource-processor/.
 #    container_name: resource-processor
