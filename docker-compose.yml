@@ -68,6 +68,8 @@ services:
     restart: always
     ports:
       - "8761:8761"
+    networks:
+       - my_network
   api-gateway:
     build: ./api-gateway/.
     depends_on:
@@ -82,9 +84,12 @@ services:
       EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
       SONG_SERVICE_NAME: ${SONG_SERVICE_NAME}
       RESOURCE_SERVICE_NAME: ${RESOURCE_SERVICE_NAME}
+    networks:
+      - my_network
   resource-processor:
     build: ./resource-processor/.
     container_name: resource-processor
+    restart: always
     depends_on:
       - rabbitmq
       - resource-service
@@ -110,6 +115,7 @@ services:
   resource-service:
     build: ./resource-service/.
 #    container_name: resource-service
+    restart: always
     depends_on:
       - resource-db
       - rabbitmq
@@ -145,6 +151,7 @@ services:
   song-service:
     build: ./song-service/.
 #    container_name: song-service
+    restart: always
     depends_on:
       - song-db
 #    ports:
@@ -168,6 +175,7 @@ services:
       start_period: 30s
     networks:
       - my_network
+
 networks:
   my_network:
     driver: bridge
