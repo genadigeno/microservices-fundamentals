@@ -62,85 +62,104 @@ services:
       start_period: 30s
     networks:
       - my_network
-  resource-processor:
-    build: ./resource-processor/.
-    container_name: resource-processor
-    depends_on:
-      - rabbitmq
-      - resource-service
-      - song-service
+  service-registry:
+    build: ./service-registry/.
+    container_name: service-registry
+    restart: always
     ports:
-      - "8084:8084"
-    env_file:
-      - .env
-    environment:
-      SERVER_PORT: ${PROCESSOR_SERVER_PORT}
-      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
-      SONG_SERVICE_URL: "http://song-service:8082"
-      RESOURCE_SERVICE_URL: "http://resource-service:8083"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8084/actuator/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    networks:
-      - my_network
-  resource-service:
-    build: ./resource-service/.
-    container_name: resource-service
+      - "8761:8761"
+  api-gateway:
+    build: ./api-gateway/.
     depends_on:
-      - resource-db
-      - rabbitmq
-      - localstack
-    ports:
-      - "8083:8083"
-    environment:
-      SERVER_PORT: ${RESOURCE_SERVER_PORT}
-      POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
-      POSTGRES_USERNAME: ${RESOURCE_POSTGRES_USER}
-      SPRING_DATASOURCE_URL: ${RESOURCE_DB_URL}
-      POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
-      JPA_GENERATED_DDL: ${RESOURCE_JPA_GENERATED_DDL}
-      JPA_HIBERNATE_DDL_AUTO: ${RESOURCE_JPA_HIBERNATE_DDL_AUTO}
-      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
-#      AWS_ENDPOINT_URL: ${AWS_ENDPOINT_URL}
-      AWS_ENDPOINT_URL: http://localstack:4566
-    env_file:
-      - .env
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8083/actuator/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    networks:
-      - my_network
-  song-service:
-    build: ./song-service/.
-    container_name: song-service
-    depends_on:
+      - service-registry
       - song-db
+      - resource-service
+    container_name: api-gateway
+    restart: always
     ports:
-      - "8082:8082"
+      - "8888:8888"
     environment:
-      SERVER_PORT: ${SONG_SERVER_PORT}
-      POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
-      POSTGRES_USERNAME: ${SONG_POSTGRES_USER}
-      SPRING_DATASOURCE_URL: ${SONG_DB_URL}
-      POSTGRES_DB: ${SONG_POSTGRES_DB}
-      JPA_GENERATED_DDL: ${SONG_JPA_GENERATED_DDL}
-      JPA_HIBERNATE_DDL_AUTO: ${SONG_JPA_HIBERNATE_DDL_AUTO}
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    networks:
-      - my_network
+      SERVER_PORT: ${GATEWAY_SERVER_PORT}
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+#  resource-processor:
+#    build: ./resource-processor/.
+#    container_name: resource-processor
+#    depends_on:
+#      - rabbitmq
+#      - resource-service
+#      - song-service
+#    ports:
+#      - "8084:8084"
+#    env_file:
+#      - .env
+#    environment:
+#      SERVER_PORT: ${PROCESSOR_SERVER_PORT}
+#      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
+#      SONG_SERVICE_URL: "http://song-service:8082"
+#      RESOURCE_SERVICE_URL: "http://resource-service:8083"
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://localhost:8084/actuator/health" ]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 30s
+#    networks:
+#      - my_network
+#  resource-service:
+#    build: ./resource-service/.
+#    container_name: resource-service
+#    depends_on:
+#      - resource-db
+#      - rabbitmq
+#      - localstack
+#    ports:
+#      - "8083:8083"
+#    environment:
+#      SERVER_PORT: ${RESOURCE_SERVER_PORT}
+#      POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
+#      POSTGRES_USERNAME: ${RESOURCE_POSTGRES_USER}
+#      SPRING_DATASOURCE_URL: ${RESOURCE_DB_URL}
+#      POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
+#      JPA_GENERATED_DDL: ${RESOURCE_JPA_GENERATED_DDL}
+#      JPA_HIBERNATE_DDL_AUTO: ${RESOURCE_JPA_HIBERNATE_DDL_AUTO}
+#      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
+#      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+#      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+##      AWS_ENDPOINT_URL: ${AWS_ENDPOINT_URL}
+#      AWS_ENDPOINT_URL: http://localstack:4566
+#    env_file:
+#      - .env
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://localhost:8083/actuator/health" ]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 30s
+#    networks:
+#      - my_network
+#  song-service:
+#    build: ./song-service/.
+#    container_name: song-service
+#    depends_on:
+#      - song-db
+#    ports:
+#      - "8082:8082"
+#    environment:
+#      SERVER_PORT: ${SONG_SERVER_PORT}
+#      POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
+#      POSTGRES_USERNAME: ${SONG_POSTGRES_USER}
+#      SPRING_DATASOURCE_URL: ${SONG_DB_URL}
+#      POSTGRES_DB: ${SONG_POSTGRES_DB}
+#      JPA_GENERATED_DDL: ${SONG_JPA_GENERATED_DDL}
+#      JPA_HIBERNATE_DDL_AUTO: ${SONG_JPA_HIBERNATE_DDL_AUTO}
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 30s
+#    networks:
+#      - my_network
 networks:
   my_network:
     driver: bridge
