@@ -1,4 +1,4 @@
-# Introduction to Microservices
+# Microservices Fundamentals 
 introduction-to-microservices practical tasks
 
 1. Resource service
