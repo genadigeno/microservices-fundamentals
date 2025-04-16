@@ -48,24 +48,24 @@ public class ResourceService {
 
         String fileName = UUID.randomUUID() +".mp3";
 
-        //store into DB
+        //1.store into DB
         SongResource resource = new SongResource();
         resource.setLocation(fileName);
 
         logger.info("Creating resource...");
         final SongResource saved = resourceRepository.save(resource);
 
-        //store into AWS S3
+        //2.store into AWS S3
         PutObjectRequest objectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
-                .key(fileName)
+                .key(fileName)// /files/fileName
                 .contentType(SongResource.RESOURCE_CONTENT_TYPE)
                 .build();
 
         logger.info("sending object to bucket {}", bucketName);
         s3Client.putObject(objectRequest, RequestBody.fromBytes(fileBytes));
 
-        //send a message for resource processor
+        //3.send a message for resource processor
         messageService.sendMessage(saved.getId());
 
         return Map.of("id", saved.getId());

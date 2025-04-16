@@ -29,152 +29,166 @@ services:
       - ./init-scripts/song-db/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - my_network
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: rabbitmq
+  storage-db:
+    image: postgres:17-alpine3.21
+    container_name: storage-db
+    restart: always
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "54323:5432"
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
-    networks:
-      - my_network
-  localstack:
-    container_name: "localstack"
-    image: localstack/localstack
-    ports:
-      - "8080:8080"
-      - "4566:4566"
-      - "4510-4559:4510-4559"
-    environment:
-      DEBUG: 1
-      EDGE_PORT: 4566
-      SERVICES: s3
+      POSTGRES_PASSWORD: ${STORAGE_POSTGRES_PASSWORD}
+      POSTGRES_USER: ${STORAGE_POSTGRES_USER}
+      POSTGRES_DB: ${STORAGE_POSTGRES_DB}
     volumes:
-      - "./localstack/vol:/var/lib/localstack"
-      - "./localstack/init:/etc/localstack/init"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:4566/_localstack/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      - ./init-scripts/storage-db/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - my_network
-  service-registry:
-    build: ./service-registry/.
-    container_name: service-registry
-    restart: always
-    ports:
-      - "8761:8761"
-    networks:
-       - my_network
-  api-gateway:
-    build: ./api-gateway/.
-    depends_on:
-      - service-registry
-      - song-db
-    container_name: api-gateway
-    restart: always
-    ports:
-      - "8888:8888"
-    environment:
-      SERVER_PORT: ${GATEWAY_SERVER_PORT}
-      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
-      SONG_SERVICE_NAME: ${SONG_SERVICE_NAME}
-      RESOURCE_SERVICE_NAME: ${RESOURCE_SERVICE_NAME}
-    networks:
-      - my_network
-  resource-processor:
-    build: ./resource-processor/.
-    container_name: resource-processor
-    restart: always
-    depends_on:
-      - rabbitmq
-      - resource-service
-      - song-service
-    ports:
-      - "8084:8084"
-    env_file:
-      - .env
-    environment:
-      SERVER_PORT: ${PROCESSOR_SERVER_PORT}
-      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
-      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
-      SONG_SERVICE_URL: ${SONG_SERVICE_URL}
-      RESOURCE_SERVICE_URL: ${RESOURCE_SERVICE_URL}
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8084/actuator/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    networks:
-      - my_network
-  resource-service:
-    build: ./resource-service/.
-#    container_name: resource-service
-    restart: always
-    depends_on:
-      - resource-db
-      - rabbitmq
-      - localstack
+#  rabbitmq:
+#    image: rabbitmq:3-management-alpine
+#    container_name: rabbitmq
 #    ports:
-#      - "8083:8083"
-    deploy:
-      replicas: 2
-    environment:
-      SERVER_PORT: ${RESOURCE_SERVER_PORT}
-      POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
-      POSTGRES_USERNAME: ${RESOURCE_POSTGRES_USER}
-      SPRING_DATASOURCE_URL: ${RESOURCE_DB_URL}
-      POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
-      JPA_GENERATED_DDL: ${RESOURCE_JPA_GENERATED_DDL}
-      JPA_HIBERNATE_DDL_AUTO: ${RESOURCE_JPA_HIBERNATE_DDL_AUTO}
-      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
-      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
-#      AWS_ENDPOINT_URL: ${AWS_ENDPOINT_URL}
-      AWS_ENDPOINT_URL: http://localstack:4566
-    env_file:
-      - .env
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8083/actuator/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    networks:
-      - my_network
-  song-service:
-    build: ./song-service/.
-#    container_name: song-service
-    restart: always
-    depends_on:
-      - song-db
+#      - "5672:5672"
+#      - "15672:15672"
+#    environment:
+#      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+#      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+#    networks:
+#      - my_network
+#  localstack:
+#    container_name: "localstack"
+#    image: localstack/localstack
 #    ports:
-#      - "8082:8082"
-    deploy:
-      replicas: 2
-    environment:
-      SERVER_PORT: ${SONG_SERVER_PORT}
-      POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
-      POSTGRES_USERNAME: ${SONG_POSTGRES_USER}
-      SPRING_DATASOURCE_URL: ${SONG_DB_URL}
-      POSTGRES_DB: ${SONG_POSTGRES_DB}
-      JPA_GENERATED_DDL: ${SONG_JPA_GENERATED_DDL}
-      JPA_HIBERNATE_DDL_AUTO: ${SONG_JPA_HIBERNATE_DDL_AUTO}
-      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    networks:
-      - my_network
+#      - "8080:8080"
+#      - "4566:4566"
+#      - "4510-4559:4510-4559"
+#    environment:
+#      DEBUG: 1
+#      EDGE_PORT: 4566
+#      SERVICES: s3
+#    volumes:
+#      - "./localstack/init:/etc/localstack/init"
+##      - "./localstack/vol:/var/lib/localstack"
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://localhost:4566/_localstack/health" ]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 30s
+#    networks:
+#      - my_network
+#  service-registry:
+#    build: ./service-registry/.
+#    container_name: service-registry
+#    restart: always
+#    ports:
+#      - "8761:8761"
+#    networks:
+#       - my_network
+#  api-gateway:
+#    build: ./api-gateway/.
+#    depends_on:
+#      - service-registry
+#      - song-db
+#    container_name: api-gateway
+#    restart: always
+#    ports:
+#      - "8888:8888"
+#    environment:
+#      SERVER_PORT: ${GATEWAY_SERVER_PORT}
+#      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+#      SONG_SERVICE_NAME: ${SONG_SERVICE_NAME}
+#      RESOURCE_SERVICE_NAME: ${RESOURCE_SERVICE_NAME}
+#    networks:
+#      - my_network
+#  resource-processor:
+#    build: ./resource-processor/.
+#    container_name: resource-processor
+#    restart: always
+#    depends_on:
+#      - rabbitmq
+#      - resource-service
+#      - song-service
+#    ports:
+#      - "8084:8084"
+#    env_file:
+#      - .env
+#    environment:
+#      SERVER_PORT: ${PROCESSOR_SERVER_PORT}
+#      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
+#      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+#      SONG_SERVICE_URL: ${SONG_SERVICE_URL}
+#      RESOURCE_SERVICE_URL: ${RESOURCE_SERVICE_URL}
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://localhost:8084/actuator/health" ]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 30s
+#    networks:
+#      - my_network
+#  resource-service:
+#    build: ./resource-service/.
+##    container_name: resource-service
+#    restart: always
+#    depends_on:
+#      - resource-db
+#      - rabbitmq
+#      - localstack
+##    ports:
+##      - "8083:8083"
+#    deploy:
+#      replicas: 2
+#    environment:
+#      SERVER_PORT: ${RESOURCE_SERVER_PORT}
+#      POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
+#      POSTGRES_USERNAME: ${RESOURCE_POSTGRES_USER}
+#      SPRING_DATASOURCE_URL: ${RESOURCE_DB_URL}
+#      POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
+#      JPA_GENERATED_DDL: ${RESOURCE_JPA_GENERATED_DDL}
+#      JPA_HIBERNATE_DDL_AUTO: ${RESOURCE_JPA_HIBERNATE_DDL_AUTO}
+#      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
+#      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+#      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+#      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+##      AWS_ENDPOINT_URL: ${AWS_ENDPOINT_URL}
+#      AWS_ENDPOINT_URL: http://localstack:4566
+#    env_file:
+#      - .env
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://localhost:8083/actuator/health" ]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 30s
+#    networks:
+#      - my_network
+#  song-service:
+#    build: ./song-service/.
+##    container_name: song-service
+#    restart: always
+#    depends_on:
+#      - song-db
+##    ports:
+##      - "8082:8082"
+#    deploy:
+#      replicas: 2
+#    environment:
+#      SERVER_PORT: ${SONG_SERVER_PORT}
+#      POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
+#      POSTGRES_USERNAME: ${SONG_POSTGRES_USER}
+#      SPRING_DATASOURCE_URL: ${SONG_DB_URL}
+#      POSTGRES_DB: ${SONG_POSTGRES_DB}
+#      JPA_GENERATED_DDL: ${SONG_JPA_GENERATED_DDL}
+#      JPA_HIBERNATE_DDL_AUTO: ${SONG_JPA_HIBERNATE_DDL_AUTO}
+#      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 30s
+#    networks:
+#      - my_network
 
 networks:
   my_network:
