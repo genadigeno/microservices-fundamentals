@@ -41,12 +41,16 @@ public class ProcessorConsumer {
                 log.info("calling resource service with id {}", resourceId);
                 SongResource resource = resourceService.getResource(resourceId);
 
+                log.info("retrieving storage data from storage service...");
                 List<StorageDto> storages = storageAPIService.getStorages();
+
+                log.info("retrieving staging storage info...");
                 StorageDto stagingStorage = storages.stream()
                         .filter(storageDto -> storageDto.getStorageType().equalsIgnoreCase("staging"))
                         .findFirst()
                         .orElseThrow(() -> new RuntimeException("staging storage not found"));
 
+                log.info("retrieving object from bucket: {}", stagingStorage.getBucket());
                 ResponseBytes<GetObjectResponse> object = s3Client.getObjectAsBytes(
                         GetObjectRequest.builder()
                                 .bucket(stagingStorage.getBucket())
@@ -54,17 +58,18 @@ public class ProcessorConsumer {
                                 .build()
                 );
 
+                log.info("retrieving permanent storage info...");
                 StorageDto permanentStorage = storages.stream()
                         .filter(storageDto -> storageDto.getStorageType().equalsIgnoreCase("permanent"))
                         .findFirst()
                         .orElseThrow(() -> new RuntimeException("permanent storage not found"));
 
+                log.info("sending object to bucket {}", permanentStorage.getBucket());
                 PutObjectRequest objectRequest = PutObjectRequest.builder()
                         .bucket(permanentStorage.getBucket())
                         .key(resource.getLocation())// /files/fileName
                         .contentType(SongResource.RESOURCE_CONTENT_TYPE)
                         .build();
-                log.info("sending object to bucket {}", permanentStorage.getBucket());
                 PutObjectResponse putResponse =
                         s3Client.putObject(objectRequest, RequestBody.fromBytes(object.asByteArray()));
 
