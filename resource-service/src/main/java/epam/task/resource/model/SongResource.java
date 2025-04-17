@@ -18,4 +18,5 @@ public class SongResource {
 
     private String location;
     private String fileState;
+    private String bucketName;
 }

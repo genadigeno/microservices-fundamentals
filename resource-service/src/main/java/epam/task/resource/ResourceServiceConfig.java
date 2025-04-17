@@ -6,6 +6,9 @@ import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +28,7 @@ import java.net.URISyntaxException;
 @EnableRetry
 @EnableFeignClients
 @EnableDiscoveryClient
+@EnableCaching
 public class ResourceServiceConfig {
 
     /* - - - - - - - - - - - - AWS S3 config - - - - - - - - - - - - */
@@ -73,5 +77,12 @@ public class ResourceServiceConfig {
     @Bean
     public Binding binding(Queue queue, DirectExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange).with("*");
+    }
+
+    /* - - - - - - - - - - - - Caching - - - - - - - - - - - - */
+
+    @Bean
+    public CacheManager cacheManager() {
+        return new CaffeineCacheManager();
     }
 }

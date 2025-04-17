@@ -66,12 +66,12 @@ public class ResourceService {
 
         //2.store into AWS S3
         PutObjectRequest objectRequest = PutObjectRequest.builder()
-                .bucket(bucketName)
+                .bucket(storageData.getBucket())
                 .key(fileName)// /files/fileName
                 .contentType(SongResource.RESOURCE_CONTENT_TYPE)
                 .build();
 
-        logger.info("sending object to bucket {}", bucketName);
+        logger.info("sending object to bucket {}", storageData.getBucket());
         s3Client.putObject(objectRequest, RequestBody.fromBytes(fileBytes));
 
         //3.send a message for resource processor
@@ -85,16 +85,16 @@ public class ResourceService {
         SongResource resource = resourceRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("resource with ID="+id+" not found"));
 
-        logger.info("Retrieving a resource from aws s3 bucket[{}]...", bucketName);
+        logger.info("Retrieving a resource from aws s3 bucket[{}]...", resource.getBucketName());
         ResponseBytes<GetObjectResponse> object = s3Client.getObjectAsBytes(
                 GetObjectRequest.builder()
-                        .bucket(bucketName)
+                        .bucket(resource.getBucketName())
                         .key(resource.getLocation())
                         .build()
         );
 
         logger.info("Retrieved resource from aws s3 bucket[{}], size of a file: {}",
-                bucketName, object.asByteArray().length);
+                resource.getBucketName(), object.asByteArray().length);
         return object.asByteArray();
     }
 
@@ -107,7 +107,7 @@ public class ResourceService {
             ///1. delete from aws S3 bucket. if it fails we will throw an exception that rolls back our changes.
             resources.forEach(resource -> {
                 s3Client.deleteObject(DeleteObjectRequest.builder()
-                        .bucket(bucketName)
+                        .bucket(resource.getBucketName())
                         .key(resource.getLocation())
                         .build());
             });
