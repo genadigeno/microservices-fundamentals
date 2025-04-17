@@ -1,12 +1,17 @@
 package task.epam.storageapp;
+import jakarta.validation.constraints.NotNull;
+
 import java.io.Serializable;
 
 public class StorageDto implements Serializable {
     public StorageDto() {
     }
 
+    @NotNull
     private String storageType;
+    @NotNull
     private String bucket;
+    @NotNull
     private String path;
 
     public String getStorageType() {

@@ -43,47 +43,47 @@ services:
       - ./init-scripts/storage-db/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - my_network
-#  rabbitmq:
-#    image: rabbitmq:3-management-alpine
-#    container_name: rabbitmq
-#    ports:
-#      - "5672:5672"
-#      - "15672:15672"
-#    environment:
-#      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-#      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
-#    networks:
-#      - my_network
-#  localstack:
-#    container_name: "localstack"
-#    image: localstack/localstack
-#    ports:
-#      - "8080:8080"
-#      - "4566:4566"
-#      - "4510-4559:4510-4559"
-#    environment:
-#      DEBUG: 1
-#      EDGE_PORT: 4566
-#      SERVICES: s3
-#    volumes:
-#      - "./localstack/init:/etc/localstack/init"
-##      - "./localstack/vol:/var/lib/localstack"
-#    healthcheck:
-#      test: [ "CMD", "curl", "-f", "http://localhost:4566/_localstack/health" ]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 3
-#      start_period: 30s
-#    networks:
-#      - my_network
-#  service-registry:
-#    build: ./service-registry/.
-#    container_name: service-registry
-#    restart: always
-#    ports:
-#      - "8761:8761"
-#    networks:
-#       - my_network
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    networks:
+      - my_network
+  localstack:
+    container_name: "localstack"
+    image: localstack/localstack
+    ports:
+      - "8080:8080"
+      - "4566:4566"
+      - "4510-4559:4510-4559"
+    environment:
+      DEBUG: 1
+      EDGE_PORT: 4566
+      SERVICES: s3
+    volumes:
+      - "./localstack/init:/etc/localstack/init"
+#      - "./localstack/vol:/var/lib/localstack"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:4566/_localstack/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - my_network
+  service-registry:
+    build: ./service-registry/.
+    container_name: service-registry
+    restart: always
+    ports:
+      - "8761:8761"
+    networks:
+       - my_network
 #  api-gateway:
 #    build: ./api-gateway/.
 #    depends_on:
@@ -183,6 +183,34 @@ services:
 #      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
 #    healthcheck:
 #      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 30s
+#    networks:
+#      - my_network
+#  storage-service:
+#    build: ./storageapp-service/.
+#    container_name: storage-service
+#    restart: always
+#    depends_on:
+#      - storage-db
+#    ports:
+#      - "8086:8086"
+#    environment:
+#      SERVER_PORT: ${STORAGE_SERVER_PORT}
+#      POSTGRES_PASSWORD: ${STORAGE_POSTGRES_PASSWORD}
+#      POSTGRES_USERNAME: ${STORAGE_POSTGRES_USER}
+#      SPRING_DATASOURCE_URL: ${STORAGE_DB_URL}
+#      POSTGRES_DB: ${STORAGE_POSTGRES_DB}
+#      JPA_GENERATED_DDL: ${STORAGE_JPA_GENERATED_DDL}
+#      JPA_HIBERNATE_DDL_AUTO: ${STORAGE_JPA_HIBERNATE_DDL_AUTO}
+#      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
+#      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+#    env_file:
+#      - .env
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://localhost:8086/actuator/health" ]
 #      interval: 30s
 #      timeout: 10s
 #      retries: 3
