@@ -1,6 +1,5 @@
 package epam.task.resource.process;
 
-import epam.task.resource.clients.StorageClient;
 import epam.task.resource.clients.StorageDto;
 import epam.task.resource.model.SongResource;
 import epam.task.resource.service.ResourceService;

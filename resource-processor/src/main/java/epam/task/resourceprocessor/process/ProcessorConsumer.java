@@ -1,6 +1,7 @@
 package epam.task.resourceprocessor.process;
 
 import epam.task.resourceprocessor.reqres.MetadataInfo;
+import epam.task.resourceprocessor.services.MessageService;
 import epam.task.resourceprocessor.services.ResourceAPIService;
 import epam.task.resourceprocessor.services.SongAPIService;
 import epam.task.resourceprocessor.utils.FormatUtils;
@@ -23,13 +24,15 @@ public class ProcessorConsumer {
     private final ResourceParserService resourceParserService;
     private final ResourceAPIService resourceAPIService;
     private final SongAPIService songAPIService;
+    private final MessageService messageService;
 
     public ProcessorConsumer(ResourceParserService resourceParserService,
                              ResourceAPIService resourceAPIService,
-                             SongAPIService songAPIService) {
+                             SongAPIService songAPIService, MessageService messageService) {
         this.resourceParserService = resourceParserService;
         this.resourceAPIService = resourceAPIService;
         this.songAPIService = songAPIService;
+        this.messageService = messageService;
     }
 
     @RabbitListener(queues = "resources.queue")
@@ -50,9 +53,12 @@ public class ProcessorConsumer {
                 ResponseEntity<Map<String, Integer>> responseEntity =
                         songAPIService.createSong(buildRequestBody(resourceId, metadata));
 
-                if(responseEntity.getStatusCode().value() != 200) {
+                if(responseEntity.getStatusCode().value() == 200) {
+                    messageService.sendMessage(resourceId);
+                } else {
                     log.warn("response status is {}", responseEntity.getStatusCode().value());
                 }
+
             }
 
         } catch (Exception e) {

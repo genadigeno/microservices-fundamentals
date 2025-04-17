@@ -58,7 +58,7 @@ public class ResourceService {
 
         //1.store into DB
         SongResource resource = new SongResource();
-        resource.setLocation(fileName);
+        resource.setLocation(storageData.getPath()+"/"+fileName);
         resource.setFileState(storageData.getStorageType().toUpperCase());
 
         logger.info("Creating resource...");
