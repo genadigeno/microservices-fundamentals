@@ -2,21 +2,24 @@ package task.epam.storageapp;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @RestController
 @RequestMapping("/storages")
-@RequiredArgsConstructor
 public class StorageController {
-
+    private final static Logger log = LoggerFactory.getLogger(StorageController.class);
     private final StorageService storageService;
+
+    public StorageController(StorageService storageService) {
+        this.storageService = storageService;
+    }
 
     @PostMapping
     public ResponseEntity<Map<String, Integer>> createStorage(@Valid @RequestBody StorageDto data) {
