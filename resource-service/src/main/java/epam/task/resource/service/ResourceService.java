@@ -1,5 +1,6 @@
 package epam.task.resource.service;
 
+import epam.task.resource.clients.StorageDto;
 import epam.task.resource.exception.FileFormatException;
 import epam.task.resource.exception.IllegalParameterException;
 import epam.task.resource.model.SongResource;
@@ -34,6 +35,7 @@ public class ResourceService {
     private final ResourceRepository resourceRepository;
     private final S3Client s3Client;
     private final MessageService messageService;
+    private final StorageAPIService storageAPIService;
 
     @Value("${aws.s3.bucketName}")
     private String bucketName;
@@ -46,11 +48,18 @@ public class ResourceService {
             throw new FileFormatException("uploaded file's format is not mp3");
         }
 
+        List<StorageDto> storages = storageAPIService.getStorages();
+        StorageDto storageData = storages.stream()
+                .filter(storageDto -> storageDto.getStorageType().equalsIgnoreCase("staging"))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("staging storage not found"));
+
         String fileName = UUID.randomUUID() +".mp3";
 
         //1.store into DB
         SongResource resource = new SongResource();
         resource.setLocation(fileName);
+        resource.setFileState(storageData.getStorageType().toUpperCase());
 
         logger.info("Creating resource...");
         final SongResource saved = resourceRepository.save(resource);

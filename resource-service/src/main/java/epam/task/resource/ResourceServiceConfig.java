@@ -2,6 +2,8 @@ package epam.task.resource;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.annotation.EnableRetry;
@@ -17,6 +19,8 @@ import java.net.URISyntaxException;
 @Slf4j
 @Configuration
 @EnableRetry
+@EnableFeignClients
+@EnableDiscoveryClient
 public class ResourceServiceConfig {
 
     @Value("${aws.region}")

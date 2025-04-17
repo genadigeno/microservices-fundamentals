@@ -17,4 +17,5 @@ public class SongResource {
     private int id;
 
     private String location;
+    private String fileState;
 }
