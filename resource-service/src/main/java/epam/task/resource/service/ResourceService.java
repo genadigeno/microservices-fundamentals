@@ -135,4 +135,13 @@ public class ResourceService {
                 .map(Integer::parseInt)
                 .collect(Collectors.toList());
     }
+
+    public SongResource getResource(int resourceId) {
+        return resourceRepository.findById(resourceId)
+                .orElseThrow(() -> new EntityNotFoundException("resource with ID="+resourceId+" not found"));
+    }
+
+    public void save(SongResource resource) {
+        resourceRepository.save(resource);
+    }
 }

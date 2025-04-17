@@ -1,6 +1,10 @@
 package epam.task.resource;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Queue;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
@@ -22,6 +26,8 @@ import java.net.URISyntaxException;
 @EnableFeignClients
 @EnableDiscoveryClient
 public class ResourceServiceConfig {
+
+    /* - - - - - - - - - - - - AWS S3 config - - - - - - - - - - - - */
 
     @Value("${aws.region}")
     private String region;
@@ -50,5 +56,22 @@ public class ResourceServiceConfig {
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(accessKeyId, secretAccessKey)))
                 .build();
+    }
+
+    /* - - - - - - - - - - - - Rabbit MQ config - - - - - - - - - - - - */
+
+    @Bean
+    public Queue queue() {
+        return new Queue("file-completion.queue", false);
+    }
+
+    @Bean
+    public DirectExchange exchange() {
+        return new DirectExchange("file-completion.exchange");
+    }
+
+    @Bean
+    public Binding binding(Queue queue, DirectExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with("*");
     }
 }
