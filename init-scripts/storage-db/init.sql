@@ -6,5 +6,5 @@ create table if not exists public.storage_objects (
 );
 
 insert into public.storage_objects (storage_type, bucket, "path") values
-    ('STAGING', 'staging', '/files'),
-    ('PERMANENT', 'permanent', '/files');
+    ('STAGING', 'staging', 'files'),
+    ('PERMANENT', 'permanent', 'files');

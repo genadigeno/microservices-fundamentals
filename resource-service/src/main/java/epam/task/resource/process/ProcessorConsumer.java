@@ -66,7 +66,7 @@ public class ProcessorConsumer {
                 log.info("sending object to bucket {}", permanentStorage.getBucket());
                 PutObjectRequest objectRequest = PutObjectRequest.builder()
                         .bucket(permanentStorage.getBucket())
-                        .key(resource.getLocation())// /files/fileName
+                        .key(resource.getLocation())// files/fileName
                         .contentType(SongResource.RESOURCE_CONTENT_TYPE)
                         .build();
                 PutObjectResponse putResponse =
@@ -81,6 +81,7 @@ public class ProcessorConsumer {
 
                 log.info("updating file state from STAGING to PERMANENT");
                 resource.setFileState("PERMANENT");
+                resource.setBucketName(permanentStorage.getBucket());
                 resourceService.save(resource);
             }
 

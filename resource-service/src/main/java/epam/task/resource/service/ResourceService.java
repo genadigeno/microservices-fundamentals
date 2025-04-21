@@ -16,7 +16,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
@@ -49,17 +51,19 @@ public class ResourceService {
         }
 
         List<StorageDto> storages = storageAPIService.getStorages();
+
         StorageDto storageData = storages.stream()
                 .filter(storageDto -> storageDto.getStorageType().equalsIgnoreCase("staging"))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("staging storage not found"));
 
-        String fileName = UUID.randomUUID() +".mp3";
+        String fileName = createFileName(storageData.getPath());
 
         //1.store into DB
         SongResource resource = new SongResource();
-        resource.setLocation(storageData.getPath()+"/"+fileName);
+        resource.setLocation(fileName);
         resource.setFileState(storageData.getStorageType().toUpperCase());
+        resource.setBucketName(storageData.getBucket());
 
         logger.info("Creating resource...");
         final SongResource saved = resourceRepository.save(resource);
@@ -67,11 +71,11 @@ public class ResourceService {
         //2.store into AWS S3
         PutObjectRequest objectRequest = PutObjectRequest.builder()
                 .bucket(storageData.getBucket())
-                .key(fileName)// /files/fileName
+                .key(fileName)// files/file-name.mp3
                 .contentType(SongResource.RESOURCE_CONTENT_TYPE)
                 .build();
 
-        logger.info("sending object to bucket {}", storageData.getBucket());
+        logger.info("sending object to bucket {} with key {}", storageData.getBucket(), fileName);
         s3Client.putObject(objectRequest, RequestBody.fromBytes(fileBytes));
 
         //3.send a message for resource processor
@@ -80,18 +84,37 @@ public class ResourceService {
         return Map.of("id", saved.getId());
     }
 
+    // returns dir/file.ext not /dir/file.ext
+    private static String createFileName(String path) {
+        if (path == null || path.isEmpty()) {
+            return UUID.randomUUID() + ".mp3";
+        }
+        else {
+            path = path.startsWith("/") ? path.substring(1)          : path;
+            path = path.endsWith("/")   ? path.substring(0, path.length() - 1) : path;
+            return path + "/" + UUID.randomUUID() + ".mp3";
+        }
+    }
+
     public byte[] get(int id) {
         logger.info("Retrieving resource...");
         SongResource resource = resourceRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("resource with ID="+id+" not found"));
 
-        logger.info("Retrieving a resource from aws s3 bucket[{}]...", resource.getBucketName());
-        ResponseBytes<GetObjectResponse> object = s3Client.getObjectAsBytes(
-                GetObjectRequest.builder()
-                        .bucket(resource.getBucketName())
-                        .key(resource.getLocation())
-                        .build()
-        );
+        logger.info("Retrieving a resource from aws s3 bucket: {} and with key= {} ",
+                resource.getBucketName(), resource.getLocation());
+        ResponseBytes<GetObjectResponse> object = null;
+        try {
+            object = s3Client.getObjectAsBytes(
+                    GetObjectRequest.builder()
+                            .bucket(resource.getBucketName())
+                            .key(resource.getLocation())
+                            .build()
+            );
+        } catch (AwsServiceException | SdkClientException e) {
+            logger.error("error raised while retrieving an object", e);
+            throw new RuntimeException(e);
+        }
 
         logger.info("Retrieved resource from aws s3 bucket[{}], size of a file: {}",
                 resource.getBucketName(), object.asByteArray().length);

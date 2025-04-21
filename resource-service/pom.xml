@@ -103,7 +103,6 @@
 			<version>2.30.31</version>
 		</dependency>
 
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-amqp</artifactId>
@@ -138,6 +137,7 @@
 			<artifactId>localstack</artifactId>
 			<scope>test</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>rabbitmq</artifactId>
@@ -149,7 +149,18 @@
 			<artifactId>caffeine</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>io.github.resilience4j</groupId>
+			<artifactId>resilience4j-spring-boot2</artifactId>
+		</dependency>
 	</dependencies>
+
+	<repositories>
+		<repository>
+			<id>aws-sdk-repo</id>
+			<url>https://aws-sdk-java.s3.amazonaws.com/maven</url>
+		</repository>
+	</repositories>
 
 	<dependencyManagement>
 		<dependencies>
@@ -157,6 +168,13 @@
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-dependencies</artifactId>
 				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>software.amazon.awssdk</groupId>
+				<artifactId>bom</artifactId>
+				<version>2.30.31</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>

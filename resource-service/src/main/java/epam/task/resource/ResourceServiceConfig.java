@@ -52,11 +52,12 @@ public class ResourceServiceConfig {
         return S3Client.builder()
                 .region(Region.of(region))
                 .endpointOverride(URI.create(endpointUrl))
-                .serviceConfiguration(
+                .forcePathStyle(true)// Critical for LocalStack
+                /*.serviceConfiguration(
                         S3Configuration.builder()
-                                .pathStyleAccessEnabled(true)// Critical for LocalStack
+                                .pathStyleAccessEnabled(true)
                                 .build()
-                )
+                )*/
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(accessKeyId, secretAccessKey)))
                 .build();
