@@ -1,0 +1,6 @@
+scrape_configs:
+  - job_name: 'resource-service'
+    static_configs:
+      - targets: ['api-gateway:8888']
+        labels:
+          __metrics_path__: /actuator/prometheus/resource
