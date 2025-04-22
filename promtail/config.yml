@@ -1,0 +1,39 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: resource-service-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: resource-service
+          __path__: /logs/resource-service.log
+  - job_name: song-service-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: song-service
+          __path__: /logs/song-service.log
+  - job_name: storage-service-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: storage-service
+          __path__: /logs/storage-service.log
+  - job_name: resource-processor-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: resource-processor
+          __path__: /logs/resource-processor.log

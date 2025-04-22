@@ -4,3 +4,18 @@ scrape_configs:
       - targets: ['api-gateway:8888']
         labels:
           __metrics_path__: /actuator/prometheus/resource
+  - job_name: 'song-service'
+    static_configs:
+      - targets: ['api-gateway:8888']
+        labels:
+          __metrics_path__: /actuator/prometheus/song
+  - job_name: 'storage-service'
+    static_configs:
+      - targets: ['api-gateway:8888']
+        labels:
+          __metrics_path__: /actuator/prometheus/storage
+  - job_name: 'resource-processor'
+    static_configs:
+      - targets: ['api-gateway:8888']
+        labels:
+          __metrics_path__: /actuator/prometheus/processor

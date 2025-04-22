@@ -6,6 +6,7 @@ import epam.task.resource.exception.ValidationException;
 import epam.task.resource.reqres.DetailedErrorMessage;
 import epam.task.resource.reqres.ErrorMessage;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -28,35 +29,41 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class ResourceRestControllerAdvice extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(MultipartException.class)
     public ResponseEntity<Object> handleMultipartException(MultipartException e) {
+        log.warn("file parsing error");
         return new ResponseEntity<>(createErrorMessage(e.getMessage(), HttpStatus.BAD_REQUEST.value()),
                 HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(FileFormatException.class)
     public ResponseEntity<Object> handleFileFormatException(FileFormatException e) {
+        log.warn("file format error");
         return new ResponseEntity<>(createErrorMessage(e.getMessage(), HttpStatus.BAD_REQUEST.value()),
                 HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<Object> handleValidationException(ValidationException e) {
+        log.warn("validation error");
         return new ResponseEntity<>(createErrorMessage(e.getMessage(), HttpStatus.BAD_REQUEST.value(), e.getDetails()),
                 HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Object> handleEntityNotFoundException(EntityNotFoundException e) {
+        log.warn("entity not found error");
         return new ResponseEntity<>(createErrorMessage(e.getMessage(), HttpStatus.NOT_FOUND.value()),
                 HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Object> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        log.warn("method argument type mismatch error");
         Map<String, String> details = Map.of(e.getName(), "Invalid value '"+e.getValue()+"'");
         return new ResponseEntity<>(createErrorMessage("Invalid parameter", HttpStatus.BAD_REQUEST.value(), details),
                 HttpStatus.BAD_REQUEST);
@@ -64,12 +71,14 @@ public class ResourceRestControllerAdvice extends ResponseEntityExceptionHandler
 
     @ExceptionHandler(RestClientException.class)
     public ResponseEntity<Object> handleRestClientException(RestClientException e) {
+        log.error("rest client error");
         return new ResponseEntity<>(createErrorMessage("Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR.value()),
                 HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(ExternalServiceException.class)
     public ResponseEntity<Object> handleExternalServiceException(ExternalServiceException e) {
+        log.error("external service error");
         return new ResponseEntity<>(createErrorMessage(e.getMessage(), e.getStatus()), HttpStatus.valueOf(e.getStatus()));
     }
 
@@ -78,6 +87,7 @@ public class ResourceRestControllerAdvice extends ResponseEntityExceptionHandler
                                                                             HttpHeaders headers,
                                                                             HttpStatusCode status,
                                                                             WebRequest request) {
+        log.warn("validation error");
         final Map<String, String> details = new HashMap<>();
         List<ParameterValidationResult> validationResults = ex.getParameterValidationResults();
         validationResults.stream().findFirst().ifPresent(result -> {

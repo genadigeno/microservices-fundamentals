@@ -15,34 +15,34 @@ services:
       - ./init-scripts/resource-db/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - my_network
-#  song-db:
-#    image: postgres:17-alpine3.21
-#    container_name: song-db
-#    restart: always
-#    ports:
-#      - "54322:5432"
-#    environment:
-#      POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
-#      POSTGRES_USER: ${SONG_POSTGRES_USER}
-#      POSTGRES_DB: ${SONG_POSTGRES_DB}
-#    volumes:
-#      - ./init-scripts/song-db/init.sql:/docker-entrypoint-initdb.d/init.sql
-#    networks:
-#      - my_network
-#  storage-db:
-#    image: postgres:17-alpine3.21
-#    container_name: storage-db
-#    restart: always
-#    ports:
-#      - "54323:5432"
-#    environment:
-#      POSTGRES_PASSWORD: ${STORAGE_POSTGRES_PASSWORD}
-#      POSTGRES_USER: ${STORAGE_POSTGRES_USER}
-#      POSTGRES_DB: ${STORAGE_POSTGRES_DB}
-#    volumes:
-#      - ./init-scripts/storage-db/init.sql:/docker-entrypoint-initdb.d/init.sql
-#    networks:
-#      - my_network
+  song-db:
+    image: postgres:17-alpine3.21
+    container_name: song-db
+    restart: always
+    ports:
+      - "54322:5432"
+    environment:
+      POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
+      POSTGRES_USER: ${SONG_POSTGRES_USER}
+      POSTGRES_DB: ${SONG_POSTGRES_DB}
+    volumes:
+      - ./init-scripts/song-db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - my_network
+  storage-db:
+    image: postgres:17-alpine3.21
+    container_name: storage-db
+    restart: always
+    ports:
+      - "54323:5432"
+    environment:
+      POSTGRES_PASSWORD: ${STORAGE_POSTGRES_PASSWORD}
+      POSTGRES_USER: ${STORAGE_POSTGRES_USER}
+      POSTGRES_DB: ${STORAGE_POSTGRES_DB}
+    volumes:
+      - ./init-scripts/storage-db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - my_network
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: rabbitmq
@@ -92,9 +92,49 @@ services:
     user: root
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-#      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "9090:9090"
+    networks:
+      - my_network
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana-vol/grafana-data:/var/lib/grafana
+      - ./grafana-vol/provisioning:/etc/grafana/provisioning
+    networks:
+      - my_network
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+#    command: -config.file=/etc/loki/config.yaml
+    volumes:
+      - ./loki-config/config.yaml:/etc/loki/config.yaml
+    networks:
+      - my_network
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - ./promtail/config.yml:/etc/promtail/config.yml
+      - ./logs:/logs
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - my_network
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
+    ports:
+      - "9411:9411"
     networks:
       - my_network
   api-gateway:
@@ -112,44 +152,42 @@ services:
       RESOURCE_SERVICE_NAME: ${RESOURCE_SERVICE_NAME}
     networks:
       - my_network
-#  resource-processor:
-#    build: ./resource-processor/.
-#    container_name: resource-processor
-#    restart: always
-#    depends_on:
-#      - rabbitmq
-#      - resource-service
-#      - song-service
-#    ports:
-#      - "8084:8084"
-#    env_file:
-#      - .env
-#    environment:
-#      SERVER_PORT: ${PROCESSOR_SERVER_PORT}
-#      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
-#      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
-#      SONG_SERVICE_URL: ${SONG_SERVICE_URL}
-#      RESOURCE_SERVICE_URL: ${RESOURCE_SERVICE_URL}
-#    healthcheck:
-#      test: [ "CMD", "curl", "-f", "http://localhost:8084/actuator/health" ]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 3
-#      start_period: 30s
-#    networks:
-#      - my_network
+  resource-processor:
+    build: ./resource-processor/.
+    container_name: resource-processor
+    restart: always
+    depends_on:
+      - rabbitmq
+      - resource-service
+      - song-service
+    ports:
+      - "8084:8084"
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: ${PROCESSOR_SERVER_PORT}
+      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+      SONG_SERVICE_URL: ${SONG_SERVICE_URL}
+      RESOURCE_SERVICE_URL: ${RESOURCE_SERVICE_URL}
+      ZIPKIN_URL: ${ZIPKIN_URL}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8084/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - my_network
+    volumes:
+      - ./logs:/logs
   resource-service:
     build: ./resource-service/.
-    labels:
-      prometheus.scrape: "true"
-      prometheus.port: "8083"
     restart: always
     depends_on:
       - resource-db
       - rabbitmq
       - localstack
-    expose:
-      - 8083
     deploy:
       replicas: 2
     environment:
@@ -165,6 +203,7 @@ services:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_KEY: ${AWS_SECRET_KEY}
       AWS_ENDPOINT_URL: http://localstack:4566
+      ZIPKIN_URL: ${ZIPKIN_URL}
     env_file:
       - .env
     healthcheck:
@@ -175,61 +214,66 @@ services:
       start_period: 30s
     networks:
       - my_network
-#  song-service:
-#    build: ./song-service/.
-##    container_name: song-service
-#    restart: always
-#    depends_on:
-#      - song-db
-##    ports:
-##      - "8082:8082"
-#    deploy:
-#      replicas: 2
-#    environment:
-#      SERVER_PORT: ${SONG_SERVER_PORT}
-#      POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
-#      POSTGRES_USERNAME: ${SONG_POSTGRES_USER}
-#      SPRING_DATASOURCE_URL: ${SONG_DB_URL}
-#      POSTGRES_DB: ${SONG_POSTGRES_DB}
-#      JPA_GENERATED_DDL: ${SONG_JPA_GENERATED_DDL}
-#      JPA_HIBERNATE_DDL_AUTO: ${SONG_JPA_HIBERNATE_DDL_AUTO}
-#      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
-#    healthcheck:
-#      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 3
-#      start_period: 30s
-#    networks:
-#      - my_network
-#  storage-service:
-#    build: ./storageapp-service/.
-#    container_name: storage-service
-#    restart: always
-#    depends_on:
-#      - storage-db
-#    ports:
-#      - "8086:8086"
-#    environment:
-#      SERVER_PORT: ${STORAGE_SERVER_PORT}
-#      POSTGRES_PASSWORD: ${STORAGE_POSTGRES_PASSWORD}
-#      POSTGRES_USERNAME: ${STORAGE_POSTGRES_USER}
-#      SPRING_DATASOURCE_URL: ${STORAGE_DB_URL}
-#      POSTGRES_DB: ${STORAGE_POSTGRES_DB}
-#      JPA_GENERATED_DDL: ${STORAGE_JPA_GENERATED_DDL}
-#      JPA_HIBERNATE_DDL_AUTO: ${STORAGE_JPA_HIBERNATE_DDL_AUTO}
-#      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
-#      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
-#    env_file:
-#      - .env
-#    healthcheck:
-#      test: [ "CMD", "curl", "-f", "http://localhost:8086/actuator/health" ]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 3
-#      start_period: 30s
-#    networks:
-#      - my_network
+    volumes:
+      - ./logs:/logs
+  song-service:
+    build: ./song-service/.
+    restart: always
+    depends_on:
+      - song-db
+    deploy:
+      replicas: 2
+    environment:
+      SERVER_PORT: ${SONG_SERVER_PORT}
+      POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
+      POSTGRES_USERNAME: ${SONG_POSTGRES_USER}
+      SPRING_DATASOURCE_URL: ${SONG_DB_URL}
+      POSTGRES_DB: ${SONG_POSTGRES_DB}
+      JPA_GENERATED_DDL: ${SONG_JPA_GENERATED_DDL}
+      JPA_HIBERNATE_DDL_AUTO: ${SONG_JPA_HIBERNATE_DDL_AUTO}
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+      ZIPKIN_URL: ${ZIPKIN_URL}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - my_network
+    volumes:
+      - ./logs:/logs
+  storage-service:
+    build: ./storageapp-service/.
+    container_name: storage-service
+    restart: always
+    depends_on:
+      - storage-db
+    ports:
+      - "8086:8086"
+    environment:
+      SERVER_PORT: ${STORAGE_SERVER_PORT}
+      POSTGRES_PASSWORD: ${STORAGE_POSTGRES_PASSWORD}
+      POSTGRES_USERNAME: ${STORAGE_POSTGRES_USER}
+      SPRING_DATASOURCE_URL: ${STORAGE_DB_URL}
+      POSTGRES_DB: ${STORAGE_POSTGRES_DB}
+      JPA_GENERATED_DDL: ${STORAGE_JPA_GENERATED_DDL}
+      JPA_HIBERNATE_DDL_AUTO: ${STORAGE_JPA_HIBERNATE_DDL_AUTO}
+      SPRING_RABBITMQ_ADDRESSES: ${SPRING_RABBITMQ_ADDRESSES}
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+      ZIPKIN_URL: ${ZIPKIN_URL}
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8086/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - my_network
+    volumes:
+      - ./logs:/logs
 
 networks:
   my_network:

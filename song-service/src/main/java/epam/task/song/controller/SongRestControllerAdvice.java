@@ -5,6 +5,7 @@ import epam.task.song.exception.IllegalParameterException;
 import epam.task.song.reqres.ErrorMessage;
 import epam.task.song.reqres.DetailedErrorMessage;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -24,12 +25,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
+@Slf4j
 @RestControllerAdvice
 public class SongRestControllerAdvice extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Object> handleEntityNotFoundException(EntityNotFoundException ex) {
+        log.warn("song not found");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 createErrorMessage(ex.getMessage(), HttpStatus.NOT_FOUND.value())
         );
@@ -37,6 +39,7 @@ public class SongRestControllerAdvice extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(EntityAlreadyExistsException.class)
     public ResponseEntity<Object> handleEntityAlreadyExistsException(EntityAlreadyExistsException ex) {
+        log.warn("song already exists");
         return ResponseEntity.status(HttpStatus.CONFLICT).body(
                 createErrorMessage(ex.getMessage(), HttpStatus.CONFLICT.value())
         );
@@ -44,6 +47,7 @@ public class SongRestControllerAdvice extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(IllegalParameterException.class)
     public ResponseEntity<Object> handleIllegalArgumentException(IllegalParameterException ex) {
+        log.warn("illegal parameter applied");
         return ResponseEntity.badRequest().body(
                 createErrorMessage(ex.getMessage(), HttpStatus.BAD_REQUEST.value(), ex.getDetails())
         );
@@ -54,6 +58,7 @@ public class SongRestControllerAdvice extends ResponseEntityExceptionHandler {
                                                                   HttpHeaders headers,
                                                                   HttpStatusCode status,
                                                                   WebRequest request) {
+        log.warn("method argument not valid");
         BindingResult bindingResult = ex.getBindingResult();
         List<ObjectError> errors = bindingResult.getAllErrors();
 
@@ -65,8 +70,8 @@ public class SongRestControllerAdvice extends ResponseEntityExceptionHandler {
             }
         });
 
-        return ResponseEntity.badRequest().body(createErrorMessage(
-                "invalid request body parameters", HttpStatus.BAD_REQUEST.value(), details
+        return ResponseEntity.badRequest().body(
+                createErrorMessage("invalid request body parameters", HttpStatus.BAD_REQUEST.value(), details
         ));
     }
 
@@ -75,6 +80,7 @@ public class SongRestControllerAdvice extends ResponseEntityExceptionHandler {
                                                                             HttpHeaders headers,
                                                                             HttpStatusCode status,
                                                                             WebRequest request) {
+        log.warn("handler method validation exception");
         final Map<String, String> details = new HashMap<>();
         List<ParameterValidationResult> validationResults = ex.getParameterValidationResults();
         validationResults.stream().findFirst().ifPresent(result -> {

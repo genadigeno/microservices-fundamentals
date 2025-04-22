@@ -158,14 +158,19 @@
 			<groupId>io.micrometer</groupId>
 			<artifactId>micrometer-registry-prometheus</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-tracing-bridge-brave</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.zipkin.reporter2</groupId>
+			<artifactId>zipkin-reporter-brave</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.opentelemetry</groupId>
+			<artifactId>opentelemetry-exporter-zipkin</artifactId>
+		</dependency>
 	</dependencies>
-
-	<repositories>
-		<repository>
-			<id>aws-sdk-repo</id>
-			<url>https://aws-sdk-java.s3.amazonaws.com/maven</url>
-		</repository>
-	</repositories>
 
 	<dependencyManagement>
 		<dependencies>
