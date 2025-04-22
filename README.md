@@ -44,9 +44,11 @@ check if the bucket has been created:
 ```
 create bucket manually into container if it was not created on startup: 
 ```shell
-  docker exec -it localstack awslocal s3 mb s3://module-1
+  docker exec -it localstack awslocal s3 mb s3://staging
+  docker exec -it localstack awslocal s3 mb s3://permanent
 ```
 list out files:
 ```shell
-  docker exec -it localstack awslocal s3api list-objects --bucket module-1
+  docker exec -it localstack awslocal s3api list-objects --bucket staging
+  docker exec -it localstack awslocal s3api list-objects --bucket permanent
 ```
